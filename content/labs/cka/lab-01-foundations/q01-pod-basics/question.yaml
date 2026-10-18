@@ -1,0 +1,34 @@
+id: q01-pod-basics
+title: Create a labelled Pod
+domain: Workloads & Scheduling
+difficulty: easy
+context: |
+  The web team wants a quick test Pod in their namespace before they write a Deployment.
+tasks: |
+  In namespace `lab1-q1`:
+
+  1. Create a Pod named `web` using image `nginx:1.27-alpine`.
+  2. Give it the label `tier=frontend`.
+  3. Declare container port `80`.
+  4. Make sure the Pod is `Running`.
+checks:
+  - id: pod-exists
+    description: Pod web exists in namespace lab1-q1
+    points: 1
+    run: exists lab1-q1 pod web
+  - id: image
+    description: Pod web uses image nginx:1.27-alpine
+    points: 1
+    run: jp_eq lab1-q1 pod web '{.spec.containers[0].image}' nginx:1.27-alpine
+  - id: label
+    description: Pod web has label tier=frontend
+    points: 1
+    run: jp_eq lab1-q1 pod web '{.metadata.labels.tier}' frontend
+  - id: port
+    description: Container port 80 is declared
+    points: 1
+    run: jp_eq lab1-q1 pod web '{.spec.containers[0].ports[0].containerPort}' 80
+  - id: running
+    description: Pod web is Running and Ready
+    points: 1
+    run: pod_ready lab1-q1 web 15s

@@ -1,0 +1,48 @@
+# Exams, pass marks and domain weights.
+# Pass marks and duration: Linux Foundation certification FAQ / CKA-CKAD tips (read 2026-10-17)
+#   https://docs.linuxfoundation.org/tc-docs/certification/faq-cka-ckad-cks
+# Domain weights and Kubernetes versions: curriculum pages, as recorded in the study plan (checked 2026-10-16).
+# Target dates come from the study plan and are only used for the countdown.
+exams:
+  - id: cka
+    short: CKA
+    name: Certified Kubernetes Administrator
+    passPercent: 66
+    durationMinutes: 120
+    kubernetesVersion: v1.37
+    targetDate: "2026-11-24"
+    domains:
+      - { name: Troubleshooting, weight: 30 }
+      - { name: "Cluster Architecture, Installation & Configuration", weight: 25 }
+      - { name: Services & Networking, weight: 20 }
+      - { name: Workloads & Scheduling, weight: 15 }
+      - { name: Storage, weight: 10 }
+
+  - id: ckad
+    short: CKAD
+    name: Certified Kubernetes Application Developer
+    passPercent: 66
+    durationMinutes: 120
+    kubernetesVersion: v1.37
+    targetDate: "2026-12-08"
+    domains:
+      - { name: "Application Environment, Configuration & Security", weight: 25 }
+      - { name: Application Design & Build, weight: 20 }
+      - { name: Application Deployment, weight: 20 }
+      - { name: Services & Networking, weight: 20 }
+      - { name: Application Observability & Maintenance, weight: 15 }
+
+  - id: cks
+    short: CKS
+    name: Certified Kubernetes Security Specialist
+    passPercent: 67
+    durationMinutes: 120
+    kubernetesVersion: v1.35
+    targetDate: "2026-12-30"
+    domains:
+      - { name: Minimize Microservice Vulnerabilities, weight: 20 }
+      - { name: Supply Chain Security, weight: 20 }
+      - { name: "Monitoring, Logging & Runtime Security", weight: 20 }
+      - { name: Cluster Setup, weight: 15 }
+      - { name: Cluster Hardening, weight: 15 }
+      - { name: System Hardening, weight: 10 }

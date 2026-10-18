@@ -1,0 +1,28 @@
+id: q04-fix-image
+title: Fix a Pod that cannot start
+domain: Troubleshooting
+difficulty: easy
+context: |
+  A colleague created the Pod `broken-web` in a hurry before going on leave. It has never
+  started, and the team wants it running before the demo.
+tasks: |
+  In namespace `lab1-q4` the Pod `broken-web` is not running.
+
+  1. Find out why. Write the Pod's status reason exactly as shown in the `STATUS` column of
+     `kubectl get pod` (one word, for example `CrashLoopBackOff`) to `{{qdir}}/reason.txt`.
+  2. Fix the Pod so that it runs image `nginx:1.27-alpine`. The Pod must keep the name `broken-web`
+     in namespace `lab1-q4`.
+  3. Make sure the Pod is `Running` and ready.
+checks:
+  - id: reason
+    description: reason.txt contains the image pull status reason (ErrImagePull or ImagePullBackOff)
+    points: 1
+    run: file_has "$Q_DIR/reason.txt" '^[[:space:]]*(ErrImagePull|ImagePullBackOff)[[:space:]]*$'
+  - id: image
+    description: Pod broken-web uses image nginx:1.27-alpine
+    points: 1
+    run: jp_eq lab1-q4 pod broken-web '{.spec.containers[0].image}' nginx:1.27-alpine
+  - id: running
+    description: Pod broken-web is Running and Ready
+    points: 2
+    run: pod_ready lab1-q4 broken-web 15s

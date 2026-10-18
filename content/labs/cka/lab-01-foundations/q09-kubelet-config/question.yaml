@@ -1,0 +1,36 @@
+id: q09-kubelet-config
+title: Find the kubelet's configuration on a node
+domain: Cluster Architecture, Installation & Configuration
+difficulty: medium
+context: |
+  A static Pod is behaving strangely on one worker. Before anyone edits files, you need to know
+  exactly which configuration file the kubelet on that node reads, and where it looks for
+  static Pod manifests.
+tasks: |
+  Work on node `{{nodes.worker1}}`. Open a shell on it with `node-shell {{nodes.worker1}}`
+  (type `exit` to come back).
+
+  1. The kubelet runs as a systemd service. Find the configuration file that the service passes to
+     the kubelet with the `--config` flag (look at the unit file **and** its drop-in files).
+     Write its absolute path to `{{qdir}}/kubelet-config.txt`.
+  2. Write the value of `staticPodPath` from that configuration file to `{{qdir}}/static-pod-path.txt`.
+
+  Only read files on the node. Do not change, restart or stop anything.
+  The answer files must be written on your terminal machine (where `{{qdir}}` is), not on the node.
+checks:
+  - id: config-path
+    description: kubelet-config.txt contains the path the kubelet service passes with --config
+    points: 2
+    run: |
+      exp=$(on_node "$NODE_WORKER1" systemctl cat kubelet 2>/dev/null | grep -o -- '--config=[^[:space:]"]*' | tail -n 1 | cut -d= -f2)
+      [[ -n "$exp" ]] || { echo "could not read the kubelet unit on $NODE_WORKER1"; exit 1; }
+      file_eq "$Q_DIR/kubelet-config.txt" "$exp"
+  - id: static-pod-path
+    description: static-pod-path.txt contains staticPodPath from the kubelet config file
+    points: 2
+    run: |
+      cfg=$(on_node "$NODE_WORKER1" systemctl cat kubelet 2>/dev/null | grep -o -- '--config=[^[:space:]"]*' | tail -n 1 | cut -d= -f2)
+      [[ -n "$cfg" ]] || { echo "could not read the kubelet unit on $NODE_WORKER1"; exit 1; }
+      exp=$(on_node "$NODE_WORKER1" cat "$cfg" 2>/dev/null | sed -n 's/^staticPodPath:[[:space:]]*//p' | tr -d "\"'" | sed 's/[[:space:]]*$//')
+      [[ -n "$exp" ]] || { echo "could not read staticPodPath from $cfg on $NODE_WORKER1"; exit 1; }
+      file_eq "$Q_DIR/static-pod-path.txt" "$exp"

@@ -1,0 +1,16 @@
+id: lab-01-foundations
+title: Lab 1 · Foundations
+level: Week 1
+description: Pods, Deployments, Services, labels, ConfigMaps, rollouts and a first look inside a node. Short tasks to build kubectl speed.
+durationMinutes: 60
+questions:
+  - q01-pod-basics
+  - q02-deployment-scale
+  - q03-expose-service
+  - q04-fix-image
+  - q05-service-selector
+  - q06-configmap-env
+  - q07-cluster-info
+  - q08-labels-selectors
+  - q09-kubelet-config
+  - q10-rollout

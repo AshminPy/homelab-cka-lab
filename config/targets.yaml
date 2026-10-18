@@ -1,0 +1,47 @@
+# Practice clusters the app can drive. Pick one with LAB_TARGET=<id>; otherwise `default` is used.
+# The app writes a kubeconfig holding ONLY the chosen context to ~/.local/state/homelab-cka-lab/kubeconfig
+# and gives that to the terminal, setup scripts and checks. Your ~/.kube/config is never read or changed
+# for kind targets (kubeconfigCommand); for file targets only the named context is copied.
+#
+# nodes:      keys used by lab content as {{nodes.<key>}} (text) and $NODE_<KEY> (scripts).
+# nodeShell:  interactive shell on a node   -> `node-shell <node>`
+# nodeExec:   run one command on a node     -> `node-shell <node> -- <command>`
+default: kind-cka
+targets:
+  - id: kind-cka
+    description: Local kind cluster "cka" (1 control plane + 2 workers)
+    context: kind-cka
+    kubeconfigCommand: [kind, get, kubeconfig, --name, cka]
+    nodeShell: docker exec -it {node} bash
+    nodeExec: docker exec {node}
+    nodes:
+      controlPlane: cka-control-plane
+      worker1: cka-worker
+      worker2: cka-worker2
+    createHint: kind create cluster --name cka --config ~/kind-cka.yaml
+
+  - id: kind-cka-labtest
+    description: Throwaway kind cluster used to test lab content
+    context: kind-cka-labtest
+    kubeconfigCommand: [kind, get, kubeconfig, --name, cka-labtest]
+    nodeShell: docker exec -it {node} bash
+    nodeExec: docker exec {node}
+    nodes:
+      controlPlane: cka-labtest-control-plane
+      worker1: cka-labtest-worker
+      worker2: cka-labtest-worker2
+    createHint: kind create cluster --name cka-labtest --config ~/kind-cka.yaml
+
+  # Homelab kubeadm cluster on cerebro. Not built yet: update context, kubeconfig path and node
+  # names when Phase 1 is done (see AshminPy/homelab PROGRESS.md).
+  - id: range
+    description: Homelab kubeadm cluster "range" on cerebro (not built yet)
+    context: kubernetes-admin@range
+    kubeconfigPath: ~/.kube/range.yaml
+    nodeShell: ssh -t {node} sudo -i
+    nodeExec: ssh {node} sudo
+    nodes:
+      controlPlane: range-cp-01
+      worker1: range-worker-1
+      worker2: range-worker-2
+    createHint: Build the range cluster (homelab Phase 1), then copy its admin kubeconfig to ~/.kube/range.yaml

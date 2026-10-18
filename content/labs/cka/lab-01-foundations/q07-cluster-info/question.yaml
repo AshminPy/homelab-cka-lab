@@ -1,0 +1,41 @@
+id: q07-cluster-info
+title: Collect basic cluster facts
+domain: Cluster Architecture, Installation & Configuration
+difficulty: easy
+context: |
+  You are new on the platform team. Before any change, your lead wants a short inventory of the
+  cluster: which nodes it has, which one runs the control plane, and which Kubernetes version
+  the API server reports.
+tasks: |
+  Write the answers to these files. Each file must contain only the answer.
+
+  1. `{{qdir}}/nodes.txt`: the names of all nodes in the cluster, one name per line, sorted alphabetically.
+  2. `{{qdir}}/control-plane.txt`: the name of the control-plane node.
+  3. `{{qdir}}/version.txt`: the Kubernetes version of the API **server**, exactly as reported
+     (for example `v1.34.2`).
+checks:
+  - id: nodes
+    description: nodes.txt lists all node names, one per line, sorted
+    points: 2
+    run: |
+      names=$(kubectl get nodes -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}')
+      [[ -n "$names" ]] || { echo "could not list nodes"; exit 1; }
+      file_exists "$Q_DIR/nodes.txt" || exit 1
+      actual=$(file_trim "$Q_DIR/nodes.txt" | sed -e 's/^[[:space:]]*//')
+      # Accept either byte order or the locale's alphabetical order.
+      if [[ "$actual" == "$(printf '%s\n' "$names" | LC_ALL=C sort)" ]]; then exit 0; fi
+      expect_eq "$actual" "$(printf '%s\n' "$names" | sort)"
+  - id: control-plane
+    description: control-plane.txt contains the control-plane node name
+    points: 1
+    run: |
+      cp=$(kubectl get nodes -l node-role.kubernetes.io/control-plane -o jsonpath='{.items[*].metadata.name}')
+      [[ -n "$cp" ]] || { echo "could not find a node with role control-plane"; exit 1; }
+      file_eq "$Q_DIR/control-plane.txt" "$cp"
+  - id: version
+    description: version.txt contains the API server's Kubernetes version
+    points: 1
+    run: |
+      v=$(kubectl get --raw /version | sed -n 's/.*"gitVersion": *"\([^"]*\)".*/\1/p')
+      [[ -n "$v" ]] || { echo "could not read the server version"; exit 1; }
+      file_eq "$Q_DIR/version.txt" "$v"
