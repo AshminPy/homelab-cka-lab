@@ -1,0 +1,8 @@
+node_modules/
+web/dist/
+*.log
+.DS_Store
+# Never commit kubeconfigs or local progress
+*.kubeconfig
+kubeconfig
+progress.json

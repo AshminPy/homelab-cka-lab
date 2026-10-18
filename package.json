@@ -1,0 +1,43 @@
+{
+  "name": "homelab-cka-lab",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Local killer.sh-style practice labs for CKA, CKAD and CKS with auto-grading and progress tracking",
+  "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "postinstall": "node scripts/fix-node-pty.mjs",
+    "start": "vite build && node server/index.ts",
+    "serve": "node server/index.ts",
+    "dev:server": "LAB_DEV=1 node --watch server/index.ts",
+    "dev:web": "vite",
+    "build": "vite build",
+    "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.web.json --noEmit",
+    "test": "node --test \"server/**/*.test.ts\"",
+    "test:content": "node server/content-test.ts"
+  },
+  "dependencies": {
+    "express": "5.3.0",
+    "node-pty": "1.1.0",
+    "ws": "8.22.0",
+    "yaml": "2.9.1"
+  },
+  "devDependencies": {
+    "@types/express": "5.0.6",
+    "@types/node": "24.19.2",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "@types/ws": "8.18.2",
+    "@vitejs/plugin-react": "6.1.2",
+    "@xterm/addon-fit": "0.11.0",
+    "@xterm/xterm": "6.0.0",
+    "dompurify": "3.4.17",
+    "marked": "18.1.1",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "typescript": "5.9.3",
+    "vite": "8.3.4"
+  }
+}

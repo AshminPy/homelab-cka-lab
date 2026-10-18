@@ -1,0 +1,35 @@
+id: q10-rollout
+title: Roll out a new image version
+domain: Workloads & Scheduling
+difficulty: medium
+context: |
+  A security fix is available in a newer nginx release. The frontend team wants it rolled out
+  without downtime and wants to record which Deployment revision is now live.
+tasks: |
+  In namespace `lab1-q10` the Deployment `frontend` runs `nginx:1.26-alpine` with 3 replicas.
+
+  1. Update the Deployment `frontend` so its container runs image `nginx:1.27-alpine`.
+     Find the container name yourself.
+  2. Wait until the rollout is complete: all 3 replicas updated and ready.
+  3. Write the Deployment's current revision number (only the number) to `{{qdir}}/revision.txt`.
+checks:
+  - id: image
+    description: Deployment frontend uses image nginx:1.27-alpine
+    points: 1
+    run: jp_eq lab1-q10 deployment frontend '{.spec.template.spec.containers[0].image}' nginx:1.27-alpine
+  - id: rolled-out
+    description: All 3 replicas run the new image and are ready
+    points: 2
+    run: |
+      jp_eq lab1-q10 deployment frontend '{.spec.template.spec.containers[0].image}' nginx:1.27-alpine || exit 1
+      jp_eq lab1-q10 deployment frontend '{.spec.replicas}' 3 || exit 1
+      jp_eq lab1-q10 deployment frontend '{.status.updatedReplicas}' 3 || exit 1
+      jp_eq lab1-q10 deployment frontend '{.status.readyReplicas}' 3 || exit 1
+      rollout_done lab1-q10 frontend 15s || { echo "rollout of deployment frontend is not complete"; exit 1; }
+  - id: revision
+    description: revision.txt contains the Deployment's current revision
+    points: 1
+    run: |
+      rev=$(jp lab1-q10 deployment frontend '{.metadata.annotations.deployment\.kubernetes\.io/revision}')
+      [[ -n "$rev" ]] || { echo "could not read the revision of deployment frontend"; exit 1; }
+      file_eq "$Q_DIR/revision.txt" "$rev"

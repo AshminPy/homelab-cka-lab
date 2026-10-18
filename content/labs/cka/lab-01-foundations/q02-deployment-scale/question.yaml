@@ -1,0 +1,37 @@
+id: q02-deployment-scale
+title: Create and scale a Deployment
+domain: Workloads & Scheduling
+difficulty: easy
+context: |
+  The API team has outgrown single Pods. They want a Deployment so Kubernetes keeps their
+  replicas running, and they expect more traffic next week.
+tasks: |
+  In namespace `lab1-q2`:
+
+  1. Create a Deployment named `api` using image `nginx:1.27-alpine` with `2` replicas.
+     Keep the default label `app=api` that `kubectl create deployment` gives it.
+  2. Scale the Deployment `api` to `4` replicas.
+  3. Make sure all `4` replicas are ready.
+checks:
+  - id: deploy-exists
+    description: Deployment api exists in namespace lab1-q2
+    points: 1
+    run: exists lab1-q2 deployment api
+  - id: image
+    description: Deployment api uses image nginx:1.27-alpine
+    points: 1
+    run: jp_eq lab1-q2 deployment api '{.spec.template.spec.containers[0].image}' nginx:1.27-alpine
+  - id: replicas
+    description: Deployment api is scaled to 4 replicas
+    points: 1
+    run: jp_eq lab1-q2 deployment api '{.spec.replicas}' 4
+  - id: ready
+    description: All 4 replicas are rolled out and ready
+    points: 1
+    run: |
+      rollout_done lab1-q2 api 15s || { echo "rollout of deployment api is not complete"; exit 1; }
+      jp_eq lab1-q2 deployment api '{.status.readyReplicas}' 4
+  - id: selector
+    description: Deployment api selects Pods with label app=api
+    points: 1
+    run: jp_eq lab1-q2 deployment api '{.spec.selector.matchLabels.app}' api

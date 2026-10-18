@@ -1,0 +1,31 @@
+#!/bin/bash
+# node-shell <node>                 open an interactive shell on a cluster node
+# node-shell <node> -- <command>    run one command on a node
+# Node names and the commands used come from the practice target (config/targets.yaml),
+# passed in by the app as LAB_NODES, LAB_NODE_SHELL and LAB_NODE_EXEC.
+node="$1"
+if [[ -z "$node" || "$node" == "-h" || "$node" == "--help" ]]; then
+  echo "usage: node-shell <node> [-- command ...]"
+  echo "nodes: ${LAB_NODES:-<none - run this inside the lab terminal>}"
+  exit 2
+fi
+shift
+
+known=0
+for n in $LAB_NODES; do
+  if [[ "$n" == "$node" ]]; then known=1; fi
+done
+if [[ $known -ne 1 ]]; then
+  echo "node-shell: unknown node '$node'. Nodes: ${LAB_NODES}" >&2
+  exit 2
+fi
+
+if [[ "$1" == "--" ]]; then
+  shift
+  template="$LAB_NODE_EXEC"
+else
+  template="$LAB_NODE_SHELL"
+fi
+cmdline="${template//\{node\}/$node}"
+read -r -a argv <<< "$cmdline"
+exec "${argv[@]}" "$@"

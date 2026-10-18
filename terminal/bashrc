@@ -1,0 +1,22 @@
+# Lab terminal shell. Mirrors the exam hosts: `k` alias with completion, plus the usual shortcuts.
+# KUBECONFIG points at a file holding ONLY the practice cluster (set by the app).
+export BASH_SILENCE_DEPRECATION_WARNING=1
+export HISTFILE="${COURSE_DIR:-/tmp/course}/.bash_history"
+
+alias k=kubectl
+export do="--dry-run=client -o yaml"
+export now="--force --grace-period 0"
+export EDITOR="${EDITOR:-vi}"
+
+# kubectl completion for kubectl and k. macOS bash 3.2 can't `source <(...)`, so eval it.
+if command -v kubectl >/dev/null 2>&1; then
+  eval "$(kubectl completion bash 2>/dev/null)" 2>/dev/null
+  complete -o default -F __start_kubectl k 2>/dev/null
+fi
+
+PS1='\[\e[1;32m\]learner\[\e[0m\]@\[\e[1;36m\]${LAB_TARGET}\[\e[0m\]:\[\e[34m\]\w\[\e[0m\]\$ '
+
+cd "${COURSE_DIR:-/tmp/course}" 2>/dev/null
+printf '\e[1;32mKubernetes Lab\e[0m practice terminal\n'
+printf 'context: \e[36m%s\e[0m   nodes: %s\n' "$(kubectl config current-context 2>/dev/null)" "$LAB_NODES"
+printf 'shortcuts: k, $do, $now   node access: node-shell <node>   answer files: %s/<question>\n\n' "${COURSE_DIR:-/tmp/course}"

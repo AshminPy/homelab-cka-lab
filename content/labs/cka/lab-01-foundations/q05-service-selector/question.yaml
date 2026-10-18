@@ -1,0 +1,44 @@
+id: q05-service-selector
+title: A Service with no endpoints
+domain: Troubleshooting
+difficulty: medium
+context: |
+  The checkout page reports "connection refused" when it calls the payments backend.
+  The payments Pods look healthy, so the problem is somewhere between the caller and the Pods.
+tasks: |
+  In namespace `lab1-q5` the Service `payments` has no endpoints, although the Deployment
+  `payments` is running with 2 ready Pods.
+
+  1. Find out why the Service does not send traffic to the `payments` Pods.
+  2. Fix the Service so that it has the 2 `payments` Pods as ready endpoints.
+
+  Do not change the Deployment `payments` (its labels, replicas and Pod template must stay as they are).
+  The Service must keep port `80`.
+checks:
+  - id: endpoints
+    description: Service payments has 2 ready endpoints
+    points: 2
+    run: |
+      n=$(kubectl -n lab1-q5 get endpointslices -l kubernetes.io/service-name=payments \
+        -o jsonpath='{range .items[*].endpoints[*]}{.conditions.ready}{"\n"}{end}' 2>/dev/null | grep -c '^true$')
+      expect_eq "$n ready endpoints" "2 ready endpoints"
+  # The "unchanged" checks only score once the Service actually works, so doing nothing earns nothing.
+  - id: deploy-labels
+    description: Fixed without changing the Deployment's labels (Pods still app=payments)
+    points: 1
+    run: |
+      expect_eq "$(svc_ready_endpoints lab1-q5 payments) ready endpoints" "2 ready endpoints" || exit 1
+      jp_eq lab1-q5 deployment payments '{.spec.template.metadata.labels.app}' payments || exit 1
+      jp_eq lab1-q5 deployment payments '{.spec.selector.matchLabels.app}' payments
+  - id: deploy-replicas
+    description: Fixed without changing the Deployment's replicas (still 2)
+    points: 1
+    run: |
+      expect_eq "$(svc_ready_endpoints lab1-q5 payments) ready endpoints" "2 ready endpoints" || exit 1
+      jp_eq lab1-q5 deployment payments '{.spec.replicas}' 2
+  - id: svc-port
+    description: Fixed without changing the Service port (still 80)
+    points: 1
+    run: |
+      expect_eq "$(svc_ready_endpoints lab1-q5 payments) ready endpoints" "2 ready endpoints" || exit 1
+      jp_eq lab1-q5 service payments '{.spec.ports[0].port}' 80

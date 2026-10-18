@@ -1,0 +1,58 @@
+id: q03-expose-service
+title: Expose a Deployment with two Services
+domain: Services & Networking
+difficulty: easy
+context: |
+  The shop Deployment is running, but nothing can reach it yet. Other Pods need a stable
+  in-cluster address, and the QA team wants to hit it on a port of every node.
+tasks: |
+  In namespace `lab1-q3` a Deployment named `shop` already runs (Pods have label `app=shop`).
+
+  1. Create a Service named `shop` of type `ClusterIP` that sends port `80` to target port `80`
+     on the `shop` Pods.
+  2. Create a Service named `shop-np` of type `NodePort` that sends port `80` to target port `80`
+     on the `shop` Pods, using node port `30080`.
+  3. Both Services must have the two `shop` Pods as ready endpoints.
+
+  Do not change the Deployment.
+checks:
+  - id: shop-type
+    description: Service shop exists and is of type ClusterIP
+    points: 1
+    run: jp_eq lab1-q3 service shop '{.spec.type}' ClusterIP
+  - id: shop-ports
+    description: Service shop maps port 80 to targetPort 80
+    points: 1
+    run: |
+      jp_eq lab1-q3 service shop '{.spec.ports[0].port}' 80 || exit 1
+      jp_eq lab1-q3 service shop '{.spec.ports[0].targetPort}' 80
+  - id: shop-selector
+    description: Service shop selects the shop Pods (app=shop)
+    points: 1
+    run: jp_eq lab1-q3 service shop '{.spec.selector.app}' shop
+  - id: shop-endpoints
+    description: Service shop has 2 ready endpoints
+    points: 1
+    run: |
+      n=$(kubectl -n lab1-q3 get endpointslices -l kubernetes.io/service-name=shop \
+        -o jsonpath='{range .items[*].endpoints[*]}{.conditions.ready}{"\n"}{end}' 2>/dev/null | grep -c '^true$')
+      expect_eq "$n ready endpoints" "2 ready endpoints"
+  - id: np-type
+    description: Service shop-np exists and is of type NodePort
+    points: 1
+    run: jp_eq lab1-q3 service shop-np '{.spec.type}' NodePort
+  - id: np-ports
+    description: Service shop-np maps port 80 to targetPort 80 on nodePort 30080
+    points: 1
+    run: |
+      jp_eq lab1-q3 service shop-np '{.spec.ports[0].port}' 80 || exit 1
+      jp_eq lab1-q3 service shop-np '{.spec.ports[0].targetPort}' 80 || exit 1
+      jp_eq lab1-q3 service shop-np '{.spec.ports[0].nodePort}' 30080
+  - id: np-endpoints
+    description: Service shop-np selects the shop Pods and has 2 ready endpoints
+    points: 1
+    run: |
+      jp_eq lab1-q3 service shop-np '{.spec.selector.app}' shop || exit 1
+      n=$(kubectl -n lab1-q3 get endpointslices -l kubernetes.io/service-name=shop-np \
+        -o jsonpath='{range .items[*].endpoints[*]}{.conditions.ready}{"\n"}{end}' 2>/dev/null | grep -c '^true$')
+      expect_eq "$n ready endpoints" "2 ready endpoints"

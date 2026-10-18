@@ -1,0 +1,59 @@
+id: q06-configmap-env
+title: Configure a Pod from a ConfigMap
+domain: Workloads & Scheduling
+difficulty: medium
+context: |
+  The reader app must not have its settings baked into the image. Operations want the settings
+  in a ConfigMap, available both as an environment variable and as files.
+tasks: |
+  In namespace `lab1-q6`:
+
+  1. Create a ConfigMap named `app-config` with these two keys:
+     - `LOG_LEVEL` = `debug`
+     - `MODE` = `blue`
+  2. Create a Pod named `reader` using image `busybox:1.37` that runs the command `sleep 3600`.
+  3. In Pod `reader`, set the environment variable `LOG_LEVEL` from key `LOG_LEVEL` of ConfigMap
+     `app-config` (do not type the value `debug` into the Pod spec).
+  4. Mount the whole ConfigMap `app-config` as a volume at `/etc/app` in the container, so that
+     the file `/etc/app/MODE` contains `blue`.
+  5. Make sure the Pod is `Running`.
+checks:
+  - id: configmap
+    description: ConfigMap app-config has LOG_LEVEL=debug and MODE=blue
+    points: 1
+    run: |
+      jp_eq lab1-q6 configmap app-config '{.data.LOG_LEVEL}' debug || exit 1
+      jp_eq lab1-q6 configmap app-config '{.data.MODE}' blue
+  - id: env-ref
+    description: Env LOG_LEVEL in Pod reader comes from ConfigMap app-config key LOG_LEVEL (configMapKeyRef or envFrom)
+    points: 1
+    # Grade the outcome, not the method: a single configMapKeyRef or an un-prefixed envFrom both work.
+    run: |
+      name=$(jp lab1-q6 pod reader '{.spec.containers[0].env[?(@.name=="LOG_LEVEL")].valueFrom.configMapKeyRef.name}')
+      key=$(jp lab1-q6 pod reader '{.spec.containers[0].env[?(@.name=="LOG_LEVEL")].valueFrom.configMapKeyRef.key}')
+      if [[ "$name" == app-config && "$key" == LOG_LEVEL ]]; then exit 0; fi
+      literal=$(jp lab1-q6 pod reader '{.spec.containers[0].env[?(@.name=="LOG_LEVEL")].value}')
+      [[ -z "$literal" ]] || { echo "LOG_LEVEL is typed into the Pod spec as '$literal' instead of coming from the ConfigMap"; exit 1; }
+      from=$(jp lab1-q6 pod reader '{range .spec.containers[0].envFrom[*]}{.configMapRef.name}|{.prefix}{"\n"}{end}')
+      if printf '%s\n' "$from" | grep -qx 'app-config|'; then exit 0; fi
+      echo "LOG_LEVEL does not come from ConfigMap app-config (use env valueFrom.configMapKeyRef, or envFrom configMapRef without a prefix)"
+      exit 1
+  - id: mount
+    description: ConfigMap app-config is mounted as a volume at /etc/app
+    points: 1
+    run: |
+      v=$(jp lab1-q6 pod reader '{.spec.containers[0].volumeMounts[?(@.mountPath=="/etc/app")].name}')
+      if [[ -z "$v" ]]; then echo "nothing is mounted at /etc/app in Pod reader"; exit 1; fi
+      jp_eq lab1-q6 pod reader "{.spec.volumes[?(@.name==\"$v\")].configMap.name}" app-config
+  - id: running
+    description: Pod reader uses busybox:1.37 and is Running and Ready
+    points: 1
+    run: |
+      jp_eq lab1-q6 pod reader '{.spec.containers[0].image}' busybox:1.37 || exit 1
+      pod_ready lab1-q6 reader 15s || { echo "Pod reader is not Ready"; exit 1; }
+  - id: file-content
+    description: Inside Pod reader, /etc/app/MODE contains blue
+    points: 1
+    run: |
+      out=$(kubectl -n lab1-q6 exec reader -- cat /etc/app/MODE 2>&1)
+      expect_eq "$out" blue

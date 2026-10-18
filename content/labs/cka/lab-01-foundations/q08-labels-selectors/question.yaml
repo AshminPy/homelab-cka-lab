@@ -1,0 +1,45 @@
+id: q08-labels-selectors
+title: Work with labels and selectors
+domain: Workloads & Scheduling
+difficulty: medium
+context: |
+  Namespace `lab1-q8` is shared by several teams and has become messy. Every Pod carries an
+  `env` label and a `tier` label. Use labels, not Pod names, to find the right Pods.
+tasks: |
+  In namespace `lab1-q8`:
+
+  1. Add the label `critical=true` to every Pod that has **both** `env=prod` and `tier=db`.
+     No other Pod may get this label.
+  2. Delete every Pod that has the label `env=test`. Do not delete any other Pod.
+  3. After step 2, write the names of all remaining Pods with label `tier=web` to
+     `{{qdir}}/web-pods.txt`, one name per line, sorted alphabetically.
+checks:
+  - id: critical-label
+    description: Every Pod with env=prod and tier=db has label critical=true
+    points: 1
+    run: |
+      total=$(count lab1-q8 pod env=prod,tier=db)
+      [[ "$total" -gt 0 ]] || { echo "no Pods with env=prod,tier=db left (they must not be deleted)"; exit 1; }
+      expect_eq "$(count lab1-q8 pod env=prod,tier=db,critical=true) of $total labelled" "$total of $total labelled"
+  - id: critical-only
+    description: Only the env=prod,tier=db Pods have label critical=true
+    points: 1
+    run: |
+      wrong=$(kubectl -n lab1-q8 get pods -l 'critical=true' -o jsonpath='{range .items[*]}{.metadata.name} {.metadata.labels.env} {.metadata.labels.tier}{"\n"}{end}' | awk '$2!="prod" || $3!="db" {print $1}')
+      [[ "$(count lab1-q8 pod critical=true)" -gt 0 ]] || { echo "no Pod has label critical=true"; exit 1; }
+      expect_eq "${wrong:-none}" none
+  - id: test-deleted
+    description: All Pods with env=test are deleted
+    points: 1
+    run: expect_eq "$(count lab1-q8 pod env=test) Pods with env=test" "0 Pods with env=test"
+  - id: others-kept
+    description: The env=test Pods were deleted and nothing else (4 Pods remain)
+    points: 1
+    run: |
+      expect_eq "$(count lab1-q8 pod env=test) Pods with env=test" "0 Pods with env=test" || exit 1
+      expect_eq "$(count lab1-q8 pod 'env!=test') Pods" "4 Pods" || exit 1
+      for p in alpha charlie delta foxtrot; do exists lab1-q8 pod "$p" || { echo "Pod $p was deleted"; exit 1; }; done
+  - id: web-file
+    description: web-pods.txt lists the remaining tier=web Pods, sorted
+    points: 1
+    run: file_eq "$Q_DIR/web-pods.txt" "$(printf 'charlie\nfoxtrot')"
